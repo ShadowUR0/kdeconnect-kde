@@ -23,14 +23,10 @@ jobs:
         run: |
           set -euxo pipefail
           IMAGE="invent-registry.kde.org/sysadmin/ci-images/suse-qt611:latest"
+          HOST_UID="$(id -u)"
+          HOST_GID="$(id -g)"
           docker pull "$IMAGE"
-          docker run --rm             -v "$GITHUB_WORKSPACE:/workspace"             -w /workspace             -e CI_PROJECT_DIR=/workspace             -e CI_BUILDS_DIR=/workspace             -e CI_PROJECT_NAME=kdeconnect-kde             -e CI_COMMIT_REF_NAME=develop             -e CI_PROJECT_PATH=ShadowUR0/kdeconnect-kde             -e KDECI_PLATFORM_PATH=suse-qt6.11             -e KDECI_CC_CACHE=/tmp/kde-ci-caches             -e KDECI_CACHE_PATH=/tmp/kde-ci-artifacts             -e KDECI_GITLAB_SERVER=https://invent.kde.org/             -e KDECI_PACKAGE_PROJECT=teams/ci-artifacts/suse-qt6.11             "$IMAGE"             bash -lc '
-              set -euxo pipefail
-              git config --global --add safe.directory /workspace
-              git clone https://invent.kde.org/sysadmin/ci-utilities.git --depth=1
-              git clone https://invent.kde.org/sysadmin/repo-metadata.git ci-utilities/repo-metadata/ --depth=1
-              python3 -u ci-utilities/run-ci-build.py                 --project kdeconnect-kde                 --branch master                 --platform Linux/Qt6/Shared                 --extra-cmake-args=-DBUILD_WITH_QT6=ON                 --extra-cmake-args=-DQT_MAJOR_VERSION=6
-            ' 2>&1 | tee phase0-desktop-build.log
+          docker run --rm --user "$HOST_UID:$HOST_GID" -v "$GITHUB_WORKSPACE:/workspace" -w /workspace -e HOME=/tmp/kde-home -e CI_PROJECT_DIR=/workspace -e CI_BUILDS_DIR=/workspace -e CI_PROJECT_NAME=kdeconnect-kde -e CI_COMMIT_REF_NAME=develop -e CI_PROJECT_PATH=ShadowUR0/kdeconnect-kde -e KDECI_PLATFORM_PATH=suse-qt6.11 -e KDECI_CC_CACHE=/tmp/kde-ci-caches -e KDECI_CACHE_PATH=/tmp/kde-ci-artifacts -e KDECI_GITLAB_SERVER=https://invent.kde.org/ -e KDECI_PACKAGE_PROJECT=teams/ci-artifacts/suse-qt6.11 "$IMAGE" bash -lc 'set -euxo pipefail; mkdir -p "$HOME"; git config --global --add safe.directory /workspace; git clone https://invent.kde.org/sysadmin/ci-utilities.git /tmp/ci-utilities --depth=1; git clone https://invent.kde.org/sysadmin/repo-metadata.git /tmp/ci-utilities/repo-metadata/ --depth=1; python3 -u /tmp/ci-utilities/run-ci-build.py --project kdeconnect-kde --branch master --platform Linux/Qt6/Shared --extra-cmake-args=-DBUILD_WITH_QT6=ON --extra-cmake-args=-DQT_MAJOR_VERSION=6' 2>&1 | tee phase0-desktop-build.log
 
       - name: Upload Phase 0 desktop evidence
         if: always()
